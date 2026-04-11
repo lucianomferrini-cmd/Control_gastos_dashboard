@@ -7,7 +7,12 @@ import plotly.express as px
 # =========================
 st.set_page_config(page_title="Dashboard de Gastos", layout="wide")
 
-GOOGLE_SHEET_CSV_URL = st.secrets["SHEET_URL"]
+# --- SEGURIDAD ---
+if "SHEET_URL" in st.secrets:
+    GOOGLE_SHEET_CSV_URL = st.secrets["SHEET_URL"]
+else:
+    st.error("No se encontró la clave 'SHEET_URL' en los Secrets de Streamlit.")
+    st.stop()
 
 # =========================
 # CARGA Y CACHE DE DATOS
