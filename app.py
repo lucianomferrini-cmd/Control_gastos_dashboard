@@ -7,8 +7,7 @@ import plotly.express as px
 # =========================
 st.set_page_config(page_title="Dashboard de Gastos", layout="wide")
 
-try:
-    GOOGLE_SHEET_CSV_URL = st.secrets["SHEET_URL"]
+GOOGLE_SHEET_CSV_URL = st.secrets["SHEET_URL"]
 
 # =========================
 # CARGA Y CACHE DE DATOS
