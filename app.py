@@ -119,7 +119,7 @@ fugas = fugas.sort_values("Monto", ascending=False).head(10)
 fig_fugas = px.bar(fugas, x="Monto", y="Subcategoría", orientation="h", color="Monto", color_continuous_scale="Reds")
 st.plotly_chart(fig_fugas, use_container_width=True)
 
-# Tabs de detalle
+# --- DETALLE Y OUTLIERS ---
 st.markdown("---")
 tab1, tab2 = st.tabs(["📄 Detalle", "🚨 Outliers"])
 
@@ -129,6 +129,12 @@ with tab1:
 
 with tab2:
     if not df_outliers_list.empty:
+        # Recuperamos la leyenda aquí también
+        st.warning("⚠️ Estos gastos han sido detectados como Outliers y están excluidos de los cálculos principales para no distorsionar tus promedios.")
         st.dataframe(df_outliers_list[cols_ver], use_container_width=True, hide_index=True)
     else:
-        st.info("No hay outliers en este periodo.")
+        st.info("No hay gastos marcados como Outliers en este periodo.")
+
+st.sidebar.markdown("---")
+st.sidebar.caption("💡 **Nota sobre Outliers:** Los outliers son gastos extraordinarios que se excluyen por defecto para que puedas ver tu comportamiento de gasto real del día a día.")
+st.caption("Base: Google Sheets | Outliers excluidos por defecto para análisis limpio")
