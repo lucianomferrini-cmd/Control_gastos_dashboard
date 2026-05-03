@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+from datetime import date
+import holidays
 
 # =========================
 # CONFIGURACIÓN
@@ -49,6 +51,37 @@ def load_data(url: str) -> pd.DataFrame:
 def format_currency(value: float) -> str:
     return f"$ {value:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+def get_mes_sueldo_activo():
+    hoy = date.today()
+    ar_holidays = holidays.Argentina(years=hoy.year)
+    
+    def es_habil(d):
+        return d.weekday() < 5 and d not in ar_holidays
+    
+    # Calcular penúltimo día hábil del mes actual
+    ultimo = date(hoy.year, hoy.month % 12 + 1, 1) if hoy.month < 12 else date(hoy.year + 1, 1, 1)
+    ultimo = date(ultimo.year, ultimo.month, 1) - pd.Timedelta(days=1)
+    ultimo = ultimo.date() if hasattr(ultimo, 'date') else ultimo
+    
+    habiles = 0
+    dia = date(hoy.year, hoy.month, ultimo.day)
+    while habiles < 2:
+        if es_habil(dia):
+            habiles += 1
+            if habiles == 2:
+                break
+        dia = date(dia.year, dia.month, dia.day - 1) if dia.day > 1 else dia
+    penultimo = dia
+    
+    if hoy >= penultimo:
+        mes_sueldo = hoy.month % 12 + 1
+        anio_sueldo = hoy.year if hoy.month < 12 else hoy.year + 1
+    else:
+        mes_sueldo = hoy.month
+        anio_sueldo = hoy.year
+    
+    return mes_sueldo, anio_sueldo
+
 # =========================
 # PROCESAMIENTO
 # =========================
@@ -62,14 +95,31 @@ st.sidebar.header("🔍 Filtros")
 
 mostrar_outliers = st.sidebar.toggle("Incluir Outliers en gráficos", value=False)
 
+mes_activo, anio_activo = get_mes_sueldo_activo()
+
 anios = sorted(df_raw["Año"].dropna().unique().astype(int))
-anios_sel = st.sidebar.multiselect("Años", anios, default=anios)
+anios_sel = st.sidebar.multiselect("Años", anios, 
+    default=[anio_activo] if anio_activo in anios else anios)
+
+MESES_MAP = {1:"Ene",2:"Feb",3:"Mar",4:"Abr",5:"May",6:"Jun",
+             7:"Jul",8:"Ago",9:"Sep",10:"Oct",11:"Nov",12:"Dic"}
+df_anio = df_raw[df_raw["Año"].isin(anios_sel)]
+meses_disponibles = sorted(df_anio["Mes"].dropna().unique().astype(int))
+meses_nombres = [MESES_MAP[m] for m in meses_disponibles]
+default_mes = MESES_MAP[mes_activo] if mes_activo in meses_disponibles else meses_nombres
+meses_sel_nombres = st.sidebar.multiselect("Meses", meses_nombres,
+    default=[default_mes] if isinstance(default_mes, str) else default_mes)
+meses_sel = [m for m, n in MESES_MAP.items() if n in meses_sel_nombres]
 
 categorias = sorted(df_raw["Categoría_final"].dropna().unique())
 categorias_sel = st.sidebar.multiselect("Categorías", categorias, default=categorias)
 
 # Filtrado base
-df_filtered = df_raw[df_raw["Año"].isin(anios_sel) & df_raw["Categoría_final"].isin(categorias_sel)].copy()
+df_filtered = df_raw[
+    df_raw["Año"].isin(anios_sel) &
+    df_raw["Mes"].isin(meses_sel) &
+    df_raw["Categoría_final"].isin(categorias_sel)
+].copy()
 
 # Separar Outliers para auditoría
 df_outliers_list = df_filtered[df_filtered["Tipo"] == "Outlier"]
