@@ -153,8 +153,11 @@ with col_left:
     st.subheader("📅 Evolución Mensual")
     evo = df_filtered.groupby(["Año", "Mes", "Mes Texto"])["Monto"].sum().reset_index().sort_values(["Año", "Mes"])
     evo["Periodo"] = evo["Mes Texto"] + " " + evo["Año"].astype(str)
-    fig_evo = px.line(evo, x="Periodo", y="Monto", markers=True, line_shape="spline")
-    st.plotly_chart(fig_evo, use_container_width=True)
+    if len(meses_sel) > 1:
+        fig_evo = px.line(evo, x="Periodo", y="Monto", markers=True, line_shape="spline")
+        st.plotly_chart(fig_evo, use_container_width=True)
+    else:
+        st.info("Seleccioná más de un mes para ver la evolución.")
 
 with col_right:
     st.subheader("🛍️ Gasto por Categoría")
